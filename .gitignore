@@ -12,3 +12,7 @@
 # produced vignettes
 vignettes/*.html
 vignettes/*.pdf
+
+# Downloaded files
+pml-training.csv
+pml-testing.csv
