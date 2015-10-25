@@ -1,14 +1,16 @@
 ---
-title       : Human Activity Recognition
-subtitle    : Practical Machine Learning - Course Project
-author      : Sohail Munir Khan
-job         : Solutions Director, Customer Success
-framework   : html5slides        # {io2012, html5slides, shower, dzslides, ...}
-highlighter : prettify  # {highlight.js, prettify, highlight}
-hitheme     : tomorrow      # 
-widgets     : []            # {mathjax, quiz, bootstrap}
-mode        : selfcontained # {standalone, draft}
-knit        : slidify::knit2slides
+title: "Human Activity Recognition"
+author: "Sohail Munir Khan"
+highlighter: prettify
+output: pdf_document
+job: Solutions Director, Customer Success
+knit: slidify::knit2slides
+mode: selfcontained
+hitheme: zenburn
+subtitle: Practical Machine Learning - Course Project
+framework: html5slides
+widgets: []
+fontsize: 8pt
 ---
 
 ## Human Activity Recognition (http://groupware.les.inf.puc-rio.br/har)
@@ -32,4 +34,185 @@ knit        : slidify::knit2slides
 5. Applying Various Prediction Models until Safisfactory Results
 6. Write Results for Submission
 
+---
 
+## pml_training (url & dimension) [Download Prediction Data]
+
+```{r}
+pml_training_data = "pml-training.csv"
+pml_training_url = "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+download.file(pml_training_url, pml_training_data)
+pml_training = read.csv(pml_training_data)
+dim(pml_training)
+```
+
+---
+
+## pml_training (url & dimension) [Download Prediction Data]
+
+```{r}
+pml_testing_data = "pml-testing.csv"
+pml_testing_url = "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+download.file(pml_testing_url, pml_testing_data)
+pml_testing = read.csv(pml_testing_data)
+dim(pml_testing)
+```
+
+---
+
+## Applying Data Slicing on `pml_training`
+
+```{r}
+library(caret)
+library(kernlab)
+inTrain = createDataPartition(y = pml_training$classe, p = 3/4, list = FALSE)
+
+training = pml_training[inTrain,]
+cross = pml_training[-inTrain,]
+rbind("original dataset" = dim(pml_training), 
+      "training set" = dim(training),
+      "crossval set" = dim(cross))
+```
+
+---
+
+## Remove Near Zero Variance Predictors
+
+```{r}
+nzvInformation = nearZeroVar(training, saveMetrics = TRUE)
+nzvInformation[nzvInformation$nzv,]
+
+nzv = nearZeroVar(training)
+filteredNZVTraining = training[, -nzv]
+colnames(filteredNZVTraining)
+```
+
+---
+
+## Remove Predictors that should not affect any outcome
+
+```{r}
+filteredTraining = filteredNZVTraining[,-which(colnames(filteredNZVTraining) %in% c("X", "user_name", "raw_timestamp_part_1", "raw_timestamp_part_2", "cvtd_timestamp", "num_window"))]
+colnames(filteredTraining)
+```
+
+---
+
+## Check for Correlation between Predictors
+
+```{r}
+outputFilteredTraining = filteredTraining[,-which(colnames(filteredTraining) == "classe")]
+tCor = cor(outputFilteredTraining)
+highCorr = sum(abs(tCor[upper.tri(tCor)]) > .75)
+highCorr
+```
+
+---
+
+## Remove Predictors that have majority NAs
+
+```{r}
+finalTraining = filteredTraining #creating another subset to iterate in loop
+for(i in 1:length(filteredTraining)) { #for every column in the training dataset
+  if( sum( is.na( filteredTraining[, i] ) ) /nrow(filteredTraining) >= .6 ) { #if NAs > 60% of total observations
+    for(j in 1:length(finalTraining)) {
+      if( length( grep(names(filteredTraining[i]), names(finalTraining)[j]) ) ==1)  { #if the columns are the same:
+        finalTraining = finalTraining[ , -j] #Remove that column
+      }
+    }
+  }
+}
+#To check the new no. of observations
+dim(finalTraining)
+dim(filteredTraining)
+```
+
+---
+
+## Applying Parallel Processing Capabilities
+
+```{r}
+library(doMC)
+registerDoMC(cores = 8)
+```
+
+---
+
+## Applying Prediction Model ("gbm")
+
+```{r}
+gbm_model = train(classe ~ ., data = finalTraining, preProcess = c("center", "scale"), method = "gbm", verbose = FALSE)
+gbm_predict = predict(gbm_model, cross)
+```
+
+---
+
+## Confusion Matrix ("gbm")
+
+```{r}
+confusionMatrix(gbm_predict, cross$classe)
+```
+
+---
+
+## Applying Prediction Model ("lda")
+
+```{r}
+lda_model = train(classe ~ ., data = finalTraining, preProcess = c("center", "scale"), method = "lda", verbose = FALSE)
+lda_predict = predict(lda_model, cross)
+```
+
+---
+
+## Confusion Matrix ("lda")
+
+```{r}
+confusionMatrix(lda_predict, cross$classe)
+```
+
+---
+
+## Applying Prediction Model ("rf")
+
+```{r}
+rf_model = train(classe ~ ., data = finalTraining, preProcess = c("center", "scale"), method = "rf", verbose = FALSE)
+rf_predict = predict(rf_model, cross)
+```
+
+---
+
+## Confusion Matrix ("rf")
+
+```{r}
+confusionMatrix(rf_predict, cross$classe)
+```
+
+---
+
+## Results Summary
+
+```{r}
+pml_testing_predict = predict(rf_model, pml_testing)
+answers = as.character(pml_testing_predict)
+answers
+```
+
+---
+
+## Choices
+
+* Approximately 3/4 (75%) of data is put aside for cross validation
+* Near Zero Variance predictors removed
+* "X", "user_name", "raw_timestamp_part_1", "raw_timestamp_part_2", "cvtd_timestamp", "num_window" removed as predictors
+* Trying to find highly correlated predictors. No pair found that had same variances within .75 correlation
+* Removed predictors that had more than 60% NAs
+* Each prediction is also preProcessed with making the predictors normalised (center and scale)
+
+---
+
+## Out of Sample Error
+
+* Applied "gbm" as a prediction model. Accuracy: 0.9637 (Out of Sample Error (1 - Accuracy): 0.0363 == 3.63%). Can we do better?
+* Applied "lda" as a prediction model. Accuracy: 0.7082 (Out of Sample Error (1 - Accuracy): 0.2918 == 29.18%). Much worse. Trying one more.
+* Applied "rf" as a prediction model. Accuracy: 0.9953 (Out of Sample Error (1 - Accuracy): 0.0047 == 0.47%). Much better with Random Forest.
+* Used "rf" to predict results for pml_testing. All tests passed :)

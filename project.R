@@ -44,18 +44,18 @@ highCorr <- sum(abs(tCor[upper.tri(tCor)]) > .75)
 highCorr
 
 #  Remove Predictors that have majority NAs
-trainingV3 <- filteredTraining #creating another subset to iterate in loop
+finalTraining <- filteredTraining #creating another subset to iterate in loop
 for(i in 1:length(filteredTraining)) { #for every column in the training dataset
-  if( sum( is.na( filteredTraining[, i] ) ) /nrow(filteredTraining) >= .6 ) { #if n?? NAs > 60% of total observations
-    for(j in 1:length(trainingV3)) {
-      if( length( grep(names(filteredTraining[i]), names(trainingV3)[j]) ) ==1)  { #if the columns are the same:
-        trainingV3 <- trainingV3[ , -j] #Remove that column
+  if( sum( is.na( filteredTraining[, i] ) ) /nrow(filteredTraining) >= .6 ) { #if NAs > 60% of total observations
+    for(j in 1:length(finalTraining)) {
+      if( length( grep(names(filteredTraining[i]), names(finalTraining)[j]) ) ==1)  { #if the columns are the same:
+        finalTraining <- finalTraining[ , -j] #Remove that column
       }
     }
   }
 }
-#To check the new N?? of observations
-dim(trainingV3)
+#To check the new no. of observations
+dim(finalTraining)
 dim(filteredTraining)
 
 # Applying Parallel Processing Capabilities (optional but helpful)
@@ -63,7 +63,7 @@ library(doMC)
 registerDoMC(cores = 8)
 
 # Applying Various Prediction Models until Safisfactory Results (Also adding another preProcess to normalise predictors)
-gbm_model <- train(classe ~ ., data = trainingV3, preProcess = c("center", "scale"), method = "gbm")
+gbm_model <- train(classe ~ ., data = finalTraining, preProcess = c("center", "scale"), method = "gbm")
 gbm_model
 gbm_predict <- predict(gbm_model, cross)
 gbm_predict
@@ -71,7 +71,7 @@ dim(cross)
 length(gbm_predict)
 confusionMatrix(gbm_predict, cross$classe)
 
-lda_model <- train(classe ~ ., data = trainingV3, preProcess = c("center", "scale"), method = "lda")
+lda_model <- train(classe ~ ., data = finalTraining, preProcess = c("center", "scale"), method = "lda")
 lda_model
 lda_predict <- predict(lda_model, cross)
 lda_predict
@@ -79,7 +79,7 @@ dim(cross)
 length(lda_predict)
 confusionMatrix(lda_predict, cross$classe)
 
-rf_model <- train(classe ~ ., data = trainingV3, preProcess = c("center", "scale"), method = "rf")
+rf_model <- train(classe ~ ., data = finalTraining, preProcess = c("center", "scale"), method = "rf")
 rf_model
 rf_predict <- predict(rf_model, cross)
 rf_predict

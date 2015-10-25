@@ -9,7 +9,7 @@
 	
 	<!-- LOAD STYLE SHEETS -->
 	<link rel="stylesheet" href="libraries/frameworks/html5slides/default/styles.css">
-	<link rel="stylesheet" href="libraries/highlighters/prettify/css/tomorrow.css" />  <link rel="stylesheet" href = "assets/css/ribbons.css">
+	<link rel="stylesheet" href="libraries/highlighters/prettify/css/zenburn.css" />  <link rel="stylesheet" href = "assets/css/ribbons.css">
   
 </head>
 <body style='display: none'>
@@ -41,6 +41,477 @@
 <li>Applying Various Prediction Models until Safisfactory Results</li>
 <li>Write Results for Submission</li>
 </ol>
+
+</article>
+
+<article class="" id="slide-3" style="background:;">
+  <h3>pml_training (url &amp; dimension) [Download Prediction Data]</h3>
+  <pre><code class="r">pml_training_data = &quot;pml-training.csv&quot;
+pml_training_url = &quot;https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv&quot;
+download.file(pml_training_url, pml_training_data)
+pml_training = read.csv(pml_training_data)
+dim(pml_training)
+</code></pre>
+
+<pre><code>## [1] 19622   160
+</code></pre>
+
+</article>
+
+<article class="" id="slide-4" style="background:;">
+  <h3>pml_training (url &amp; dimension) [Download Prediction Data]</h3>
+  <pre><code class="r">pml_testing_data = &quot;pml-testing.csv&quot;
+pml_testing_url = &quot;https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv&quot;
+download.file(pml_testing_url, pml_testing_data)
+pml_testing = read.csv(pml_testing_data)
+dim(pml_testing)
+</code></pre>
+
+<pre><code>## [1]  20 160
+</code></pre>
+
+</article>
+
+<article class="" id="slide-5" style="background:;">
+  <h3>Applying Data Slicing on <code>pml_training</code></h3>
+  <pre><code class="r">library(caret)
+library(kernlab)
+inTrain = createDataPartition(y = pml_training$classe, p = 3/4, list = FALSE)
+
+training = pml_training[inTrain,]
+cross = pml_training[-inTrain,]
+rbind(&quot;original dataset&quot; = dim(pml_training), 
+      &quot;training set&quot; = dim(training),
+      &quot;crossval set&quot; = dim(cross))
+</code></pre>
+
+<pre><code>##                   [,1] [,2]
+## original dataset 19622  160
+## training set     14718  160
+## crossval set      4904  160
+</code></pre>
+
+</article>
+
+<article class="" id="slide-6" style="background:;">
+  <h3>Remove Near Zero Variance Predictors</h3>
+  <pre><code class="r">nzvInformation = nearZeroVar(training, saveMetrics = TRUE)
+nzvInformation[nzvInformation$nzv,]
+</code></pre>
+
+<pre><code>##                          freqRatio percentUnique zeroVar  nzv
+## new_window                45.57595    0.01358880   FALSE TRUE
+## kurtosis_roll_belt      2400.33333    2.11985324   FALSE TRUE
+## kurtosis_picth_belt      576.08000    1.71898356   FALSE TRUE
+## kurtosis_yaw_belt         45.57595    0.01358880   FALSE TRUE
+## skewness_roll_belt      2880.40000    2.10626444   FALSE TRUE
+## skewness_roll_belt.1     576.08000    1.79372197   FALSE TRUE
+## skewness_yaw_belt         45.57595    0.01358880   FALSE TRUE
+## max_yaw_belt             576.08000    0.44163609   FALSE TRUE
+## min_yaw_belt             576.08000    0.44163609   FALSE TRUE
+## amplitude_yaw_belt        48.16722    0.02717761   FALSE TRUE
+## avg_roll_arm              63.00000    1.72577796   FALSE TRUE
+## stddev_roll_arm           63.00000    1.72577796   FALSE TRUE
+## var_roll_arm              63.00000    1.72577796   FALSE TRUE
+## avg_pitch_arm             63.00000    1.72577796   FALSE TRUE
+## stddev_pitch_arm          63.00000    1.72577796   FALSE TRUE
+## var_pitch_arm             63.00000    1.72577796   FALSE TRUE
+## avg_yaw_arm               63.00000    1.72577796   FALSE TRUE
+## stddev_yaw_arm            66.00000    1.70539475   FALSE TRUE
+## var_yaw_arm               66.00000    1.70539475   FALSE TRUE
+## kurtosis_roll_arm        225.03125    1.72577796   FALSE TRUE
+## kurtosis_picth_arm       218.21212    1.71218916   FALSE TRUE
+## kurtosis_yaw_arm        1800.25000    2.09947004   FALSE TRUE
+## skewness_roll_arm        228.60317    1.73257236   FALSE TRUE
+## skewness_pitch_arm       218.21212    1.71218916   FALSE TRUE
+## skewness_yaw_arm        1800.25000    2.09947004   FALSE TRUE
+## max_roll_arm              21.00000    1.57630113   FALSE TRUE
+## min_roll_arm              21.00000    1.52194592   FALSE TRUE
+## min_pitch_arm             21.00000    1.56271233   FALSE TRUE
+## amplitude_roll_arm        21.00000    1.60347873   FALSE TRUE
+## amplitude_pitch_arm       22.00000    1.56271233   FALSE TRUE
+## kurtosis_roll_dumbbell  3600.50000    2.10626444   FALSE TRUE
+## kurtosis_picth_dumbbell 7201.00000    2.14023645   FALSE TRUE
+## kurtosis_yaw_dumbbell     45.57595    0.01358880   FALSE TRUE
+## skewness_roll_dumbbell  4800.66667    2.11985324   FALSE TRUE
+## skewness_pitch_dumbbell 7201.00000    2.13344204   FALSE TRUE
+## skewness_yaw_dumbbell     45.57595    0.01358880   FALSE TRUE
+## max_yaw_dumbbell         800.11111    0.46201930   FALSE TRUE
+## min_yaw_dumbbell         800.11111    0.46201930   FALSE TRUE
+## amplitude_yaw_dumbbell    46.16026    0.02038320   FALSE TRUE
+## kurtosis_roll_forearm    221.56923    1.71218916   FALSE TRUE
+## kurtosis_picth_forearm   221.56923    1.71898356   FALSE TRUE
+## kurtosis_yaw_forearm      45.57595    0.01358880   FALSE TRUE
+## skewness_roll_forearm    225.03125    1.71898356   FALSE TRUE
+## skewness_pitch_forearm   221.56923    1.70539475   FALSE TRUE
+## skewness_yaw_forearm      45.57595    0.01358880   FALSE TRUE
+## max_roll_forearm          21.33333    1.47438511   FALSE TRUE
+## max_yaw_forearm          221.56923    0.29215926   FALSE TRUE
+## min_roll_forearm          21.33333    1.48117951   FALSE TRUE
+## min_yaw_forearm          221.56923    0.29215926   FALSE TRUE
+## amplitude_yaw_forearm     57.37849    0.02038320   FALSE TRUE
+## avg_roll_forearm          21.33333    1.70539475   FALSE TRUE
+## stddev_roll_forearm       68.00000    1.69180595   FALSE TRUE
+## var_roll_forearm          68.00000    1.69180595   FALSE TRUE
+## avg_pitch_forearm         64.00000    1.71898356   FALSE TRUE
+## stddev_pitch_forearm      32.00000    1.71218916   FALSE TRUE
+## var_pitch_forearm         64.00000    1.71898356   FALSE TRUE
+## avg_yaw_forearm           64.00000    1.71898356   FALSE TRUE
+## stddev_yaw_forearm        65.00000    1.71218916   FALSE TRUE
+## var_yaw_forearm           65.00000    1.71218916   FALSE TRUE
+</code></pre>
+
+<pre><code class="r">nzv = nearZeroVar(training)
+filteredNZVTraining = training[, -nzv]
+colnames(filteredNZVTraining)
+</code></pre>
+
+<pre><code>##   [1] &quot;X&quot;                        &quot;user_name&quot;               
+##   [3] &quot;raw_timestamp_part_1&quot;     &quot;raw_timestamp_part_2&quot;    
+##   [5] &quot;cvtd_timestamp&quot;           &quot;num_window&quot;              
+##   [7] &quot;roll_belt&quot;                &quot;pitch_belt&quot;              
+##   [9] &quot;yaw_belt&quot;                 &quot;total_accel_belt&quot;        
+##  [11] &quot;max_roll_belt&quot;            &quot;max_picth_belt&quot;          
+##  [13] &quot;min_roll_belt&quot;            &quot;min_pitch_belt&quot;          
+##  [15] &quot;amplitude_roll_belt&quot;      &quot;amplitude_pitch_belt&quot;    
+##  [17] &quot;var_total_accel_belt&quot;     &quot;avg_roll_belt&quot;           
+##  [19] &quot;stddev_roll_belt&quot;         &quot;var_roll_belt&quot;           
+##  [21] &quot;avg_pitch_belt&quot;           &quot;stddev_pitch_belt&quot;       
+##  [23] &quot;var_pitch_belt&quot;           &quot;avg_yaw_belt&quot;            
+##  [25] &quot;stddev_yaw_belt&quot;          &quot;var_yaw_belt&quot;            
+##  [27] &quot;gyros_belt_x&quot;             &quot;gyros_belt_y&quot;            
+##  [29] &quot;gyros_belt_z&quot;             &quot;accel_belt_x&quot;            
+##  [31] &quot;accel_belt_y&quot;             &quot;accel_belt_z&quot;            
+##  [33] &quot;magnet_belt_x&quot;            &quot;magnet_belt_y&quot;           
+##  [35] &quot;magnet_belt_z&quot;            &quot;roll_arm&quot;                
+##  [37] &quot;pitch_arm&quot;                &quot;yaw_arm&quot;                 
+##  [39] &quot;total_accel_arm&quot;          &quot;var_accel_arm&quot;           
+##  [41] &quot;gyros_arm_x&quot;              &quot;gyros_arm_y&quot;             
+##  [43] &quot;gyros_arm_z&quot;              &quot;accel_arm_x&quot;             
+##  [45] &quot;accel_arm_y&quot;              &quot;accel_arm_z&quot;             
+##  [47] &quot;magnet_arm_x&quot;             &quot;magnet_arm_y&quot;            
+##  [49] &quot;magnet_arm_z&quot;             &quot;max_picth_arm&quot;           
+##  [51] &quot;max_yaw_arm&quot;              &quot;min_yaw_arm&quot;             
+##  [53] &quot;amplitude_yaw_arm&quot;        &quot;roll_dumbbell&quot;           
+##  [55] &quot;pitch_dumbbell&quot;           &quot;yaw_dumbbell&quot;            
+##  [57] &quot;max_roll_dumbbell&quot;        &quot;max_picth_dumbbell&quot;      
+##  [59] &quot;min_roll_dumbbell&quot;        &quot;min_pitch_dumbbell&quot;      
+##  [61] &quot;amplitude_roll_dumbbell&quot;  &quot;amplitude_pitch_dumbbell&quot;
+##  [63] &quot;total_accel_dumbbell&quot;     &quot;var_accel_dumbbell&quot;      
+##  [65] &quot;avg_roll_dumbbell&quot;        &quot;stddev_roll_dumbbell&quot;    
+##  [67] &quot;var_roll_dumbbell&quot;        &quot;avg_pitch_dumbbell&quot;      
+##  [69] &quot;stddev_pitch_dumbbell&quot;    &quot;var_pitch_dumbbell&quot;      
+##  [71] &quot;avg_yaw_dumbbell&quot;         &quot;stddev_yaw_dumbbell&quot;     
+##  [73] &quot;var_yaw_dumbbell&quot;         &quot;gyros_dumbbell_x&quot;        
+##  [75] &quot;gyros_dumbbell_y&quot;         &quot;gyros_dumbbell_z&quot;        
+##  [77] &quot;accel_dumbbell_x&quot;         &quot;accel_dumbbell_y&quot;        
+##  [79] &quot;accel_dumbbell_z&quot;         &quot;magnet_dumbbell_x&quot;       
+##  [81] &quot;magnet_dumbbell_y&quot;        &quot;magnet_dumbbell_z&quot;       
+##  [83] &quot;roll_forearm&quot;             &quot;pitch_forearm&quot;           
+##  [85] &quot;yaw_forearm&quot;              &quot;max_picth_forearm&quot;       
+##  [87] &quot;min_pitch_forearm&quot;        &quot;amplitude_roll_forearm&quot;  
+##  [89] &quot;amplitude_pitch_forearm&quot;  &quot;total_accel_forearm&quot;     
+##  [91] &quot;var_accel_forearm&quot;        &quot;gyros_forearm_x&quot;         
+##  [93] &quot;gyros_forearm_y&quot;          &quot;gyros_forearm_z&quot;         
+##  [95] &quot;accel_forearm_x&quot;          &quot;accel_forearm_y&quot;         
+##  [97] &quot;accel_forearm_z&quot;          &quot;magnet_forearm_x&quot;        
+##  [99] &quot;magnet_forearm_y&quot;         &quot;magnet_forearm_z&quot;        
+## [101] &quot;classe&quot;
+</code></pre>
+
+</article>
+
+<article class="" id="slide-7" style="background:;">
+  <h3>Remove Predictors that should not affect any outcome</h3>
+  <pre><code class="r">filteredTraining = filteredNZVTraining[,-which(colnames(filteredNZVTraining) %in% c(&quot;X&quot;, &quot;user_name&quot;, &quot;raw_timestamp_part_1&quot;, &quot;raw_timestamp_part_2&quot;, &quot;cvtd_timestamp&quot;, &quot;num_window&quot;))]
+colnames(filteredTraining)
+</code></pre>
+
+<pre><code>##  [1] &quot;roll_belt&quot;                &quot;pitch_belt&quot;              
+##  [3] &quot;yaw_belt&quot;                 &quot;total_accel_belt&quot;        
+##  [5] &quot;max_roll_belt&quot;            &quot;max_picth_belt&quot;          
+##  [7] &quot;min_roll_belt&quot;            &quot;min_pitch_belt&quot;          
+##  [9] &quot;amplitude_roll_belt&quot;      &quot;amplitude_pitch_belt&quot;    
+## [11] &quot;var_total_accel_belt&quot;     &quot;avg_roll_belt&quot;           
+## [13] &quot;stddev_roll_belt&quot;         &quot;var_roll_belt&quot;           
+## [15] &quot;avg_pitch_belt&quot;           &quot;stddev_pitch_belt&quot;       
+## [17] &quot;var_pitch_belt&quot;           &quot;avg_yaw_belt&quot;            
+## [19] &quot;stddev_yaw_belt&quot;          &quot;var_yaw_belt&quot;            
+## [21] &quot;gyros_belt_x&quot;             &quot;gyros_belt_y&quot;            
+## [23] &quot;gyros_belt_z&quot;             &quot;accel_belt_x&quot;            
+## [25] &quot;accel_belt_y&quot;             &quot;accel_belt_z&quot;            
+## [27] &quot;magnet_belt_x&quot;            &quot;magnet_belt_y&quot;           
+## [29] &quot;magnet_belt_z&quot;            &quot;roll_arm&quot;                
+## [31] &quot;pitch_arm&quot;                &quot;yaw_arm&quot;                 
+## [33] &quot;total_accel_arm&quot;          &quot;var_accel_arm&quot;           
+## [35] &quot;gyros_arm_x&quot;              &quot;gyros_arm_y&quot;             
+## [37] &quot;gyros_arm_z&quot;              &quot;accel_arm_x&quot;             
+## [39] &quot;accel_arm_y&quot;              &quot;accel_arm_z&quot;             
+## [41] &quot;magnet_arm_x&quot;             &quot;magnet_arm_y&quot;            
+## [43] &quot;magnet_arm_z&quot;             &quot;max_picth_arm&quot;           
+## [45] &quot;max_yaw_arm&quot;              &quot;min_yaw_arm&quot;             
+## [47] &quot;amplitude_yaw_arm&quot;        &quot;roll_dumbbell&quot;           
+## [49] &quot;pitch_dumbbell&quot;           &quot;yaw_dumbbell&quot;            
+## [51] &quot;max_roll_dumbbell&quot;        &quot;max_picth_dumbbell&quot;      
+## [53] &quot;min_roll_dumbbell&quot;        &quot;min_pitch_dumbbell&quot;      
+## [55] &quot;amplitude_roll_dumbbell&quot;  &quot;amplitude_pitch_dumbbell&quot;
+## [57] &quot;total_accel_dumbbell&quot;     &quot;var_accel_dumbbell&quot;      
+## [59] &quot;avg_roll_dumbbell&quot;        &quot;stddev_roll_dumbbell&quot;    
+## [61] &quot;var_roll_dumbbell&quot;        &quot;avg_pitch_dumbbell&quot;      
+## [63] &quot;stddev_pitch_dumbbell&quot;    &quot;var_pitch_dumbbell&quot;      
+## [65] &quot;avg_yaw_dumbbell&quot;         &quot;stddev_yaw_dumbbell&quot;     
+## [67] &quot;var_yaw_dumbbell&quot;         &quot;gyros_dumbbell_x&quot;        
+## [69] &quot;gyros_dumbbell_y&quot;         &quot;gyros_dumbbell_z&quot;        
+## [71] &quot;accel_dumbbell_x&quot;         &quot;accel_dumbbell_y&quot;        
+## [73] &quot;accel_dumbbell_z&quot;         &quot;magnet_dumbbell_x&quot;       
+## [75] &quot;magnet_dumbbell_y&quot;        &quot;magnet_dumbbell_z&quot;       
+## [77] &quot;roll_forearm&quot;             &quot;pitch_forearm&quot;           
+## [79] &quot;yaw_forearm&quot;              &quot;max_picth_forearm&quot;       
+## [81] &quot;min_pitch_forearm&quot;        &quot;amplitude_roll_forearm&quot;  
+## [83] &quot;amplitude_pitch_forearm&quot;  &quot;total_accel_forearm&quot;     
+## [85] &quot;var_accel_forearm&quot;        &quot;gyros_forearm_x&quot;         
+## [87] &quot;gyros_forearm_y&quot;          &quot;gyros_forearm_z&quot;         
+## [89] &quot;accel_forearm_x&quot;          &quot;accel_forearm_y&quot;         
+## [91] &quot;accel_forearm_z&quot;          &quot;magnet_forearm_x&quot;        
+## [93] &quot;magnet_forearm_y&quot;         &quot;magnet_forearm_z&quot;        
+## [95] &quot;classe&quot;
+</code></pre>
+
+</article>
+
+<article class="" id="slide-8" style="background:;">
+  <h3>Check for Correlation between Predictors</h3>
+  <pre><code class="r">outputFilteredTraining = filteredTraining[,-which(colnames(filteredTraining) == &quot;classe&quot;)]
+tCor = cor(outputFilteredTraining)
+highCorr = sum(abs(tCor[upper.tri(tCor)]) &gt; .75)
+highCorr
+</code></pre>
+
+<pre><code>## [1] NA
+</code></pre>
+
+</article>
+
+<article class="" id="slide-9" style="background:;">
+  <h3>Remove Predictors that have majority NAs</h3>
+  <pre><code class="r">finalTraining = filteredTraining #creating another subset to iterate in loop
+for(i in 1:length(filteredTraining)) { #for every column in the training dataset
+  if( sum( is.na( filteredTraining[, i] ) ) /nrow(filteredTraining) &gt;= .6 ) { #if NAs &gt; 60% of total observations
+    for(j in 1:length(finalTraining)) {
+      if( length( grep(names(filteredTraining[i]), names(finalTraining)[j]) ) ==1)  { #if the columns are the same:
+        finalTraining = finalTraining[ , -j] #Remove that column
+      }
+    }
+  }
+}
+#To check the new no. of observations
+dim(finalTraining)
+</code></pre>
+
+<pre><code>## [1] 14718    53
+</code></pre>
+
+<pre><code class="r">dim(filteredTraining)
+</code></pre>
+
+<pre><code>## [1] 14718    95
+</code></pre>
+
+</article>
+
+<article class="" id="slide-10" style="background:;">
+  <h3>Applying Parallel Processing Capabilities</h3>
+  <pre><code class="r">library(doMC)
+</code></pre>
+
+<pre><code>## Loading required package: foreach
+## Loading required package: iterators
+## Loading required package: parallel
+</code></pre>
+
+<pre><code class="r">registerDoMC(cores = 8)
+</code></pre>
+
+</article>
+
+<article class="" id="slide-11" style="background:;">
+  <h3>Applying Prediction Model (&quot;gbm&quot;)</h3>
+  <pre><code class="r">gbm_model = train(classe ~ ., data = finalTraining, preProcess = c(&quot;center&quot;, &quot;scale&quot;), method = &quot;gbm&quot;, verbose = FALSE)
+gbm_predict = predict(gbm_model, cross)
+</code></pre>
+
+</article>
+
+<article class="" id="slide-12" style="background:;">
+  <h3>Confusion Matrix (&quot;gbm&quot;)</h3>
+  <pre><code class="r">confusionMatrix(gbm_predict, cross$classe)
+</code></pre>
+
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 1373   26    0    1    3
+##          B   16  899   32    3   10
+##          C    4   24  818   30    7
+##          D    1    0    4  763    8
+##          E    1    0    1    7  873
+## 
+## Overall Statistics
+##                                           
+##                Accuracy : 0.9637          
+##                  95% CI : (0.9581, 0.9688)
+##     No Information Rate : 0.2845          
+##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16       
+##                                           
+##                   Kappa : 0.9541          
+##  Mcnemar&#39;s Test P-Value : 1.451e-06       
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity            0.9842   0.9473   0.9567   0.9490   0.9689
+## Specificity            0.9915   0.9846   0.9839   0.9968   0.9978
+## Pos Pred Value         0.9786   0.9365   0.9264   0.9832   0.9898
+## Neg Pred Value         0.9937   0.9873   0.9908   0.9901   0.9930
+## Prevalence             0.2845   0.1935   0.1743   0.1639   0.1837
+## Detection Rate         0.2800   0.1833   0.1668   0.1556   0.1780
+## Detection Prevalence   0.2861   0.1958   0.1801   0.1582   0.1799
+## Balanced Accuracy      0.9878   0.9659   0.9703   0.9729   0.9833
+</code></pre>
+
+</article>
+
+<article class="" id="slide-13" style="background:;">
+  <h3>Applying Prediction Model (&quot;lda&quot;)</h3>
+  <pre><code class="r">lda_model = train(classe ~ ., data = finalTraining, preProcess = c(&quot;center&quot;, &quot;scale&quot;), method = &quot;lda&quot;, verbose = FALSE)
+lda_predict = predict(lda_model, cross)
+</code></pre>
+
+</article>
+
+<article class="" id="slide-14" style="background:;">
+  <h3>Confusion Matrix (&quot;lda&quot;)</h3>
+  <pre><code class="r">confusionMatrix(lda_predict, cross$classe)
+</code></pre>
+
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 1144  140   87   44   47
+##          B   31  615   87   23  148
+##          C  114  114  570   98   71
+##          D  101   34   86  606   97
+##          E    5   46   25   33  538
+## 
+## Overall Statistics
+##                                           
+##                Accuracy : 0.7082          
+##                  95% CI : (0.6953, 0.7209)
+##     No Information Rate : 0.2845          
+##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16       
+##                                           
+##                   Kappa : 0.6306          
+##  Mcnemar&#39;s Test P-Value : &lt; 2.2e-16       
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity            0.8201   0.6481   0.6667   0.7537   0.5971
+## Specificity            0.9094   0.9269   0.9020   0.9224   0.9728
+## Pos Pred Value         0.7825   0.6803   0.5895   0.6558   0.8315
+## Neg Pred Value         0.9271   0.9165   0.9276   0.9503   0.9147
+## Prevalence             0.2845   0.1935   0.1743   0.1639   0.1837
+## Detection Rate         0.2333   0.1254   0.1162   0.1236   0.1097
+## Detection Prevalence   0.2981   0.1843   0.1972   0.1884   0.1319
+## Balanced Accuracy      0.8647   0.7875   0.7843   0.8381   0.7849
+</code></pre>
+
+</article>
+
+<article class="" id="slide-15" style="background:;">
+  <h3>Applying Prediction Model (&quot;rf&quot;)</h3>
+  <pre><code class="r">rf_model = train(classe ~ ., data = finalTraining, preProcess = c(&quot;center&quot;, &quot;scale&quot;), method = &quot;rf&quot;, verbose = FALSE)
+rf_predict = predict(rf_model, cross)
+</code></pre>
+
+</article>
+
+<article class="" id="slide-16" style="background:;">
+  <h3>Confusion Matrix (&quot;rf&quot;)</h3>
+  <pre><code class="r">confusionMatrix(rf_predict, cross$classe)
+</code></pre>
+
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 1394    5    0    0    0
+##          B    0  944    2    0    0
+##          C    0    0  850    9    0
+##          D    0    0    3  794    2
+##          E    1    0    0    1  899
+## 
+## Overall Statistics
+##                                         
+##                Accuracy : 0.9953        
+##                  95% CI : (0.993, 0.997)
+##     No Information Rate : 0.2845        
+##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16     
+##                                         
+##                   Kappa : 0.9941        
+##  Mcnemar&#39;s Test P-Value : NA            
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity            0.9993   0.9947   0.9942   0.9876   0.9978
+## Specificity            0.9986   0.9995   0.9978   0.9988   0.9995
+## Pos Pred Value         0.9964   0.9979   0.9895   0.9937   0.9978
+## Neg Pred Value         0.9997   0.9987   0.9988   0.9976   0.9995
+## Prevalence             0.2845   0.1935   0.1743   0.1639   0.1837
+## Detection Rate         0.2843   0.1925   0.1733   0.1619   0.1833
+## Detection Prevalence   0.2853   0.1929   0.1752   0.1629   0.1837
+## Balanced Accuracy      0.9989   0.9971   0.9960   0.9932   0.9986
+</code></pre>
+
+</article>
+
+<article class="" id="slide-17" style="background:;">
+  <h3>Results Summary</h3>
+  <pre><code class="r">pml_testing_predict = predict(rf_model, pml_testing)
+answers = as.character(pml_testing_predict)
+answers
+</code></pre>
+
+<pre><code>##  [1] &quot;B&quot; &quot;A&quot; &quot;B&quot; &quot;A&quot; &quot;A&quot; &quot;E&quot; &quot;D&quot; &quot;B&quot; &quot;A&quot; &quot;A&quot; &quot;B&quot; &quot;C&quot; &quot;B&quot; &quot;A&quot; &quot;E&quot; &quot;E&quot; &quot;A&quot;
+## [18] &quot;B&quot; &quot;B&quot; &quot;B&quot;
+</code></pre>
+
+</article>
+
+<article class="" id="slide-18" style="background:;">
+  <h3>Choices</h3>
+  <ul>
+<li>Approximately 3/4 (75%) of data is put aside for cross validation</li>
+<li>Near Zero Variance predictors removed</li>
+<li>&quot;X&quot;, &quot;user_name&quot;, &quot;raw_timestamp_part_1&quot;, &quot;raw_timestamp_part_2&quot;, &quot;cvtd_timestamp&quot;, &quot;num_window&quot; removed as predictors</li>
+<li>Trying to find highly correlated predictors. No pair found that had same variances within .75 correlation</li>
+<li>Removed predictors that had more than 60% NAs</li>
+<li>Each prediction is also preProcessed with making the predictors normalised (center and scale)</li>
+</ul>
+
+</article>
+
+<article class="" id="slide-19" style="background:;">
+  <h3>Out of Sample Error</h3>
+  <ul>
+<li>Applied &quot;gbm&quot; as a prediction model. Accuracy: 0.9637 (Out of Sample Error (1 - Accuracy): 0.0363 == 3.63%). Can we do better?</li>
+<li>Applied &quot;lda&quot; as a prediction model. Accuracy: 0.7082 (Out of Sample Error (1 - Accuracy): 0.2918 == 29.18%). Much worse. Trying one more.</li>
+<li>Applied &quot;rf&quot; as a prediction model. Accuracy: 0.9953 (Out of Sample Error (1 - Accuracy): 0.0047 == 0.47%). Much better with Random Forest.</li>
+<li>Used &quot;rf&quot; to predict results for pml_testing. All tests passed :)</li>
+</ul>
 
 </article>
 
