@@ -1,10 +1,6 @@
-<<<<<<< HEAD
-.Rproj.user
-.Rhistory
-.RData
-=======
 # History files
 .Rhistory
+.RData
 .Rapp.history
 
 # Example code in package build process
@@ -16,4 +12,3 @@
 # produced vignettes
 vignettes/*.html
 vignettes/*.pdf
->>>>>>> c93d1b28b1332736009faf7bb7c24e19b3355255
