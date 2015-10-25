@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset='utf-8'>
+	<title>Human Activity Recognition</title>
+	<meta name="description" content="Human Activity Recognition">
+	<meta name="author" content="Sohail Munir Khan">
+	<meta name="generator" content="slidify" />
+	
+	<!-- LOAD STYLE SHEETS -->
+	<link rel="stylesheet" href="libraries/frameworks/html5slides/default/styles.css">
+	<link rel="stylesheet" href="libraries/highlighters/prettify/css/tomorrow.css" />  <link rel="stylesheet" href = "assets/css/ribbons.css">
+  
+</head>
+<body style='display: none'>
+	<section class='slides layout-regular template-regular'>
+     <article class="" id="slide-1" style="background:;">
+  <h3>Human Activity Recognition (<a href="http://groupware.les.inf.puc-rio.br/har">http://groupware.les.inf.puc-rio.br/har</a>)</h3>
+  <ol>
+<li>Large Data can be collected during various human activity levels</li>
+<li>Quantity is easily retrieved for various activities but rarel the Quality</li>
+<li>Object of this Project is to identify &quot;classe&quot; (ranging from &quot;A&quot; to &quot;E&quot;)</li>
+</ol>
+
+</article>
+
+<article class="class" id="id" style="background:;">
+  <h3>Process</h3>
+  <ol>
+<li>Download Prediction Data from URLs provided</li>
+<li>Applying Data Slicing on <code>pml_training</code> for Cross Validation</li>
+<li>Preproccessing
+
+<ul>
+<li>Remove Near Zero Variance Predictors</li>
+<li>Remove Predictors that should not affect any outcome</li>
+<li>Check for Correlation between Predictors</li>
+<li>Remove Predictors that have majority NAs</li>
+</ul></li>
+<li>Applying Parallel Processing Capabilities (optional but helpful)</li>
+<li>Applying Various Prediction Models until Safisfactory Results</li>
+<li>Write Results for Submission</li>
+</ol>
+
+</article>
+
+  </section>
+</body>
+  <!-- LOAD JAVASCRIPTS  -->
+	<script src='libraries/frameworks/html5slides/default/slides.js'></script>
+	<!-- Google Prettify -->
+	<script src="http://cdnjs.cloudflare.com/ajax/libs/prettify/188.0.0/prettify.js"></script>
+	<script src='libraries/highlighters/prettify/js/lang-r.js'></script>
+	<script>
+	  var pres = document.getElementsByTagName("pre");
+	  for (var i=0; i < pres.length; ++i) {
+	    pres[i].className = "prettyprint linenums";
+	  }
+	  prettyPrint();
+	</script>
+	<!-- End Google Prettify --> 
+	</html>
