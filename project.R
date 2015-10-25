@@ -88,7 +88,8 @@ length(rf_predict)
 confusionMatrix(rf_predict, cross$classe)
 
 # Write Results for Submission
-#answers = rep("A", 20)
+pml_testing_predict <- predict(rf_model, pml_testing)
+answers <- as.character(pml_testing_predict)
 
 pml_write_files = function(x){
   n = length(x)
@@ -98,4 +99,4 @@ pml_write_files = function(x){
   }
 }
 
-#pml_write_files(answers)
+pml_write_files(answers)
